@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BiliLiveRec.Worker/BiliLiveRec.Worker.csproj" />
+  <Project Path="BiliLiveRec/BiliLiveRec.csproj" Id="46bbcc35-806f-498e-9e69-36ab7d0793ec" />
+</Solution>
