@@ -73,17 +73,5 @@ namespace BiliLiveRec.Worker.Recorder
             }
             return $"{host}{burl.Replace("?", "")}";
         }
-        public static void WriteHttpStreamToFile(Stream httpstm,string path)
-        {
-            FileStream fs = File.OpenWrite(path);
-
-            fs.Position = 0;
-            httpstm.Position = 0;
-
-            httpstm.CopyTo(fs);
-            fs.Flush();
-            fs.Dispose();
-            httpstm.Dispose();
-        }
     }
 }

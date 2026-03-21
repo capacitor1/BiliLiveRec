@@ -36,6 +36,25 @@ namespace BiliLiveRec.Worker.Recorder
                 {GetSegList(segs)}
                 """;
         }
+        public static string GetTmpStatisticsString(string roomid, string m3u8url, string recpath, string title)
+        {
+            return $"""
+                ---------------BiliLiveRecorder Record Statistics---------------
+
+                Overall
+                ----------------------------------------------------------------
+                Physical Path = '{recpath}'
+                Format = 'FMP4'
+                Version = 7
+
+                Room
+                ----------------------------------------------------------------
+                Id = {roomid}
+                Title = '{title}'
+                HLS Url = '{m3u8url}'
+
+                """;
+        }
         private static string FormatBytes(double bytes)
         {
             string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB" };

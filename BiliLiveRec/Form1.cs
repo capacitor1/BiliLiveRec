@@ -19,7 +19,7 @@ namespace BiliLiveRec
             t.AutoReset = true;
             t.Enabled = true;
         }
-        public readonly string Version = "1.0.0";
+        public readonly string Version = "1.0.1";
         public Dictionary<string, Worker> Rooms = new Dictionary<string, Worker>();
         /*
          * Value = 状态

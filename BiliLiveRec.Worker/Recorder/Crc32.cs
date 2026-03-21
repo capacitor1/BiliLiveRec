@@ -8,7 +8,7 @@ namespace BiliLiveRec.Worker.Recorder
 {
     internal static class Crc32
     {
-        public static async Task<String> CRC32(this Stream s)
+        public static string CRC32(this Stream s)
         {
             UInt32 crc = 0xFFFFFFFF;
             while(s.Position < s.Length)

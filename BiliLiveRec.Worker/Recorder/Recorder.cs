@@ -89,6 +89,7 @@ namespace BiliLiveRec.Worker.Recorder
 
             //统计信息
             long _S_DownloadedBytes = 0, _S_Crc32FailedPieces = 0, Last_S_DownloadedBytes = 0, Last_ExistsPieces = 0;
+            File.WriteAllText(Path.Combine(_RecPath, "Statistics.log"), Statistics.GetTmpStatisticsString(_RoomId, _M3U8Url, _RecPath, _S_Title));
             while (_CanRec && _InternalCanRec)
             {
                 try
@@ -118,7 +119,7 @@ namespace BiliLiveRec.Worker.Recorder
                                 _mapwriter?.Close();
                                 _mapwriter = new(Path.Combine(_RecPath, $"Video.{_videoindex:D5}.map"));
                                 _LogInstance.Log($"Created video stream map 'Video.{_videoindex:D5}.map'");
-                                _mapwriter!.Write($"#EXTM3U\r\n#EXT-X-VERSION:7\r\n#EXT-X-TARGETDURATION:0\r\n",0,0);
+                                _mapwriter.Write($"#EXTM3U\r\n#EXT-X-VERSION:7\r\n#EXT-X-TARGETDURATION:0\r\n",0,0);
                                 _videoindex++;
 
                                 int retry = 1;
@@ -177,7 +178,10 @@ namespace BiliLiveRec.Worker.Recorder
                                             //
                                             Stream stream = resp.Content.ReadAsStreamAsync().Result;
                                             _S_DownloadedBytes += stream.Length;
-                                            Utils.WriteHttpStreamToFile(stream, Path.Combine(_RecPath, $"{m4soffset}.m4s_tmp"));
+                                            FileStream fs = File.Create(Path.Combine(_RecPath, $"{m4soffset}.m4s_tmp"));
+                                            stream.CopyTo(fs);
+                                            fs.Dispose();
+                                            stream.Dispose();
                                             pm4s.Add($"{m4soffset}.m4s");
                                         }
                                         catch (Exception ex)
@@ -192,7 +196,6 @@ namespace BiliLiveRec.Worker.Recorder
                                             else throw;
                                         }
                                         _LogInstance.Log($"Get previous m4s file '{m4soffset}'");
-                                        Log.LogInfo($"STAT|{_S_DownloadedBytes - Last_S_DownloadedBytes}|{_ExistsPieces.Count - Last_ExistsPieces}", _RoomId);
                                         Last_ExistsPieces = _ExistsPieces.Count;
                                         Last_S_DownloadedBytes = _S_DownloadedBytes;
 
@@ -211,7 +214,7 @@ namespace BiliLiveRec.Worker.Recorder
                                 }
                                 _mapwriter!.Flush();
                             }
-
+                            Log.LogInfo($"STAT|{_S_DownloadedBytes - Last_S_DownloadedBytes}|{_ExistsPieces.Count - Last_ExistsPieces}", _RoomId);
                             //补充可能缺少的分片 小于1000是以防404失效以及B站分片突然跳跃
                             if (m4soffset - _PiecesPosition > 1 && m4soffset - _PiecesPosition < 1000)
                             {
@@ -286,7 +289,7 @@ namespace BiliLiveRec.Worker.Recorder
                                 //CRC32校验
                                 int retrycrc = 1;
                                 string bilicrc32 = _M3U8Content[listoffset - 1].Split('|').Last();
-                                string thiscrc32 = _videowriter_tmp.CRC32().Result;
+                                string thiscrc32 = _videowriter_tmp.CRC32();
                                 if (!thiscrc32.PadLeft(8, '0').Equals(bilicrc32.PadLeft(8, '0'), StringComparison.CurrentCultureIgnoreCase))
                                 {
                                     _LogInstance.Log($"Crc32 failed on '{m3u8line}' : expected {bilicrc32} but get {thiscrc32},retry {retrycrc} / {MaxRetry}");
@@ -297,9 +300,9 @@ namespace BiliLiveRec.Worker.Recorder
                                     }
                                     else
                                     {
-                                        string crcf = (Path.Combine(_RecPath, "Crc32FailedList.txt"));
+                                        string crcf = Path.Combine(_RecPath, "Crc32FailedList.txt");
                                         if (!File.Exists(crcf)) File.AppendAllText(crcf, "M4SNAME|VIDEOSTREAM|POSITION|LENGTH|EXPECTEDCRC|ACTURALCRC");
-                                        File.AppendAllText(Path.Combine(_RecPath, "Crc32FailedList.txt"),$"{m3u8line}|{_videoindex:D5}.mp4|{_videowriter!.Position}|{_videowriter_tmp.Length}|{bilicrc32}|{thiscrc32}\r\n");
+                                        File.AppendAllText(Path.Combine(_RecPath, "Crc32FailedList.txt"),$"{m3u8line}|{(_videoindex - 1):D5}.mp4|{_videowriter!.Position}|{_videowriter_tmp.Length}|{bilicrc32}|{thiscrc32}\r\n");
                                         _S_Crc32FailedPieces++;
                                     }
                                 }
